@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Race Car</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game">
+    <header class="hud">
+      <div class="hud-item">
+        <span class="hud-label">Score</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">Speed</span>
+        <span class="hud-value"><span id="speed">0</span> <small>km/h</small></span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">Best</span>
+        <span class="hud-value" id="best">0</span>
+      </div>
+      <button class="mute-button" id="mute-button" type="button" aria-label="Mute sound" aria-pressed="false">🔊</button>
+    </header>
+
+    <div class="stage">
+      <canvas id="canvas" width="400" height="600"></canvas>
+
+      <div class="overlay" id="overlay">
+        <h1 id="overlay-title">Race Car</h1>
+        <p id="overlay-text">Dodge the traffic for as long as you can.</p>
+        <button id="start-button" type="button">Start</button>
+        <p class="hint">← → picks your car, then steers · M to mute</p>
+      </div>
+    </div>
+
+    <div class="touch-controls">
+      <button id="left-button" type="button" aria-label="Steer left">◀</button>
+      <button id="right-button" type="button" aria-label="Steer right">▶</button>
+    </div>
+  </main>
+
+  <aside class="garage">
+    <fieldset class="color-picker" id="color-picker">
+      <legend>Your car</legend>
+      <div class="picker-row">
+        <canvas class="car-preview" id="car-preview" aria-hidden="true"></canvas>
+        <div class="swatches" id="swatches"></div>
+      </div>
+    </fieldset>
+  </aside>
+
+  <script src="sound.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

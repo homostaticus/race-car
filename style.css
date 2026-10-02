@@ -1,0 +1,305 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #12141c;
+  --panel: #1d2130;
+  --text: #f2f4f8;
+  --muted: #8b93a7;
+  --accent: #ffcc00;
+  /* Vertical space taken by everything except the canvas */
+  --chrome: 150px;
+  /* Sized so the 2:3 canvas plus the HUD always fits in the viewport */
+  --game-width: min(400px, 100%, calc((100vh - var(--chrome)) * 2 / 3));
+  /* Height of the strip under the canvas on narrow screens */
+  --dock: 112px;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 16px;
+}
+
+.game {
+  width: var(--game-width);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hud {
+  display: flex;
+  justify-content: space-between;
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 10px 16px;
+}
+
+.hud-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 70px;
+}
+
+.hud-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hud-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-value small {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.mute-button {
+  align-self: center;
+  font-size: 20px;
+  line-height: 1;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.mute-button:hover {
+  background: #2a3046;
+}
+
+.stage {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+  background: rgba(10, 12, 18, 0.78);
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.overlay h1 {
+  font-size: 40px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.overlay .hint {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Car picker, beside the game (below it on narrow screens) */
+.garage {
+  flex: none;
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.color-picker {
+  border: none;
+  text-align: center;
+  transition: opacity 0.2s;
+}
+
+/* Locked while a race is running */
+.color-picker:disabled {
+  opacity: 0.45;
+}
+
+.color-picker legend {
+  margin: 0 auto 12px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.picker-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 30px);
+  gap: 10px;
+}
+
+.car-preview {
+  width: 80px;
+  height: 125px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+
+.swatch {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--swatch);
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.swatch:disabled {
+  cursor: default;
+}
+
+.swatch:not(:disabled):hover {
+  transform: scale(1.1);
+}
+
+.swatch:checked {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.swatch:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 3px;
+}
+
+#start-button {
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  color: #12141c;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 36px;
+  cursor: pointer;
+}
+
+#start-button:hover {
+  filter: brightness(1.1);
+}
+
+/* On-screen steering, only shown on touch devices */
+.touch-controls {
+  display: none;
+  gap: 10px;
+}
+
+.touch-controls button {
+  flex: 1;
+  font-size: 24px;
+  color: var(--text);
+  background: var(--panel);
+  border: none;
+  border-radius: 10px;
+  padding: 14px 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.touch-controls button:active {
+  background: #2a3046;
+}
+
+@media (pointer: coarse) {
+  :root {
+    --chrome: 220px;
+  }
+
+  .touch-controls {
+    display: flex;
+  }
+}
+
+/* No room beside the game: the car picker docks underneath it */
+@media (max-width: 660px) {
+  :root {
+    --chrome: 272px;
+  }
+
+  body {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .garage {
+    width: var(--game-width);
+    height: var(--dock);
+    padding: 10px;
+  }
+
+  .color-picker legend {
+    margin-bottom: 6px;
+  }
+
+  .picker-row {
+    flex-direction: row;
+    justify-content: center;
+    gap: 24px;
+  }
+
+  .car-preview {
+    width: 45px;
+    height: 70px;
+    border-radius: 6px;
+  }
+}
+
+/* On phones the picker and the steering buttons take turns in the dock */
+@media (max-width: 660px) and (pointer: coarse) {
+  .touch-controls {
+    height: var(--dock);
+  }
+
+  body.playing .garage,
+  body:not(.playing) .touch-controls {
+    display: none;
+  }
+}
