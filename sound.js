@@ -76,9 +76,10 @@ const sound = (() => {
     tone(660, 0, 0.06, 'triangle', 0.1);
   }
 
-  function milestone() {
-    tone(988, 0, 0.12, 'triangle', 0.15);
-    tone(1319, 0.08, 0.25, 'triangle', 0.15);
+  // Coin-style pickup for one point, loud enough to cut through the engine
+  function point(delay = 0) {
+    tone(1175, delay, 0.08, 'square', 0.12);
+    tone(1568, delay + 0.07, 0.22, 'square', 0.12);
   }
 
   function crash() {
@@ -175,7 +176,7 @@ const sound = (() => {
   return {
     start,
     select,
-    milestone,
+    point,
     crash,
     engineStart,
     engineSpeed,

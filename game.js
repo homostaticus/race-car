@@ -43,9 +43,11 @@ const CAR_COLORS = [
   { name: 'Pink', value: '#ec4899' },
   { name: 'White', value: '#e5e7eb' },
 ];
-const BEST_KEY = 'race-car-best';
+// Scores used to count distance; a new key keeps old, incomparable bests out
+const BEST_KEY = 'race-car-best-passes';
 const COLOR_KEY = 'race-car-color';
-const MILESTONE_POINTS = 100; // chime every this many points
+const POINT_SOUND_GAP = 0.12; // seconds between sounds when several points land at once
+const POPUP_LIFE = 0.8; // seconds a "+10" stays on screen
 
 const keys = { left: false, right: false };
 
@@ -53,11 +55,11 @@ let state = 'ready'; // 'ready' | 'playing' | 'over'
 let player;
 let traffic;
 let speed;
-let distance;
 let roadOffset;
 let spawnTimer;
 let nextSpawnIsDouble;
-let lastMilestone;
+let carsPassed;
+let popups;
 let best = loadBest();
 let playerColor = loadColor();
 let lastTime = 0;
@@ -164,9 +166,9 @@ function reset() {
   };
   traffic = [];
   speed = START_SPEED;
-  distance = 0;
   roadOffset = 0;
-  lastMilestone = 0;
+  carsPassed = 0;
+  popups = [];
   scheduleSpawn();
 }
 
@@ -183,6 +185,7 @@ function start() {
 
 function gameOver() {
   state = 'over';
+  popups = [];
   setPickerLocked(false);
   sound.engineStop();
   sound.crash();
@@ -193,15 +196,15 @@ function gameOver() {
     saveBest();
   }
   overlayTitle.textContent = 'Crash!';
-  overlayText.textContent = isNewBest
-    ? `New best: ${score}`
-    : `You scored ${score}`;
+  const points = `${score} ${score === 1 ? 'point' : 'points'}`;
+  overlayText.textContent = isNewBest ? `New best: ${points}!` : `You scored ${points}`;
   startButton.textContent = 'Play again';
   overlay.classList.remove('hidden');
 }
 
+// One point per car passed — driving distance alone scores nothing
 function currentScore() {
-  return Math.floor(distance / 10);
+  return carsPassed;
 }
 
 // Spawns get closer together as the road speeds up. A double (two lanes
@@ -223,21 +226,15 @@ function spawnTraffic() {
       x: laneCenter(lanes[i]) - CAR_WIDTH / 2,
       y: -CAR_HEIGHT,
       color: colors[Math.floor(Math.random() * colors.length)],
+      passed: false,
     });
   }
 }
 
 function update(dt) {
   speed = Math.min(MAX_SPEED, speed + ACCELERATION * dt);
-  distance += speed * dt;
   roadOffset = (roadOffset + speed * dt) % 80;
   sound.engineSpeed((speed - START_SPEED) / (MAX_SPEED - START_SPEED));
-
-  const milestone = Math.floor(currentScore() / MILESTONE_POINTS);
-  if (milestone > lastMilestone) {
-    lastMilestone = milestone;
-    sound.milestone();
-  }
 
   const steer = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
   player.x += steer * STEER_SPEED * dt;
@@ -256,7 +253,36 @@ function update(dt) {
 
   if (traffic.some((car) => collides(player, car))) {
     gameOver();
+    return;
   }
+
+  // A car counts as passed once it is fully behind the player, and is worth
+  // one point. Every point plays the sound once; cars that pass together share
+  // one popup and have their sounds staggered so each one is heard.
+  let passedNow = 0;
+  for (const car of traffic) {
+    if (!car.passed && car.y > player.y + CAR_HEIGHT) {
+      car.passed = true;
+      passedNow++;
+    }
+  }
+  if (passedNow > 0) {
+    carsPassed += passedNow;
+    popups.push({
+      text: `+${passedNow}`,
+      x: player.x + CAR_WIDTH / 2,
+      y: player.y - 8,
+      age: 0,
+    });
+    for (let i = 0; i < passedNow; i++) {
+      sound.point(i * POINT_SOUND_GAP);
+    }
+  }
+
+  for (const popup of popups) {
+    popup.age += dt;
+  }
+  popups = popups.filter((popup) => popup.age < POPUP_LIFE);
 }
 
 // Hitboxes are slightly smaller than the sprites so near misses feel fair
@@ -321,12 +347,31 @@ function drawCar(x, y, color, target = ctx) {
   target.fill();
 }
 
+// Bonus popups rise and fade out above the player
+function drawPopups() {
+  ctx.save();
+  ctx.font = 'italic 800 22px system-ui, -apple-system, "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = 'rgba(18, 20, 28, 0.8)';
+  ctx.fillStyle = '#ffcc00';
+  for (const popup of popups) {
+    const t = popup.age / POPUP_LIFE;
+    const y = popup.y - t * 40;
+    ctx.globalAlpha = 1 - t * t;
+    ctx.strokeText(popup.text, popup.x, y);
+    ctx.fillText(popup.text, popup.x, y);
+  }
+  ctx.restore();
+}
+
 function render() {
   drawRoad();
   for (const car of traffic) {
     drawCar(car.x, car.y, car.color);
   }
   drawCar(player.x, player.y, playerColor);
+  drawPopups();
 
   scoreEl.textContent = currentScore();
   speedEl.textContent = state === 'playing' ? Math.round(speed * 0.3) : 0;
